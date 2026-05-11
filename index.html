@@ -796,7 +796,10 @@
     <div id="splash" class="splash">
         <h1>STRATEGEMA</h1>
         <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:40px">Plan de transformación personal</p>
-        <button class="splash-btn" onclick="startApp()">Comenzar</button>
+        <div style="display: flex; gap: 12px; flex-direction: column; width: 100%; max-width: 300px;">
+            <button class="splash-btn" onclick="startApp()">Comenzar</button>
+            <button class="splash-btn install-btn" id="installBtn" style="display: none; background: rgba(0, 137, 123, 0.9); font-size: 0.9rem; opacity: 0.9;" onclick="installApp()">📱 Instalar en el celular</button>
+        </div>
     </div>
 
     <!-- NAVIGATION -->
@@ -1049,6 +1052,46 @@
                 ]
             };
         }
+
+        // PWA Installation Handler
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Show the install button
+            const installBtn = document.getElementById('installBtn');
+            if (installBtn) {
+                installBtn.style.display = 'block';
+            }
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('App instalada');
+                    }
+                    deferredPrompt = null;
+                    // Hide button after prompt
+                    const installBtn = document.getElementById('installBtn');
+                    if (installBtn) {
+                        installBtn.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // Check if app is already installed
+        window.addEventListener('appinstalled', () => {
+            console.log('App instalada exitosamente');
+            deferredPrompt = null;
+            const installBtn = document.getElementById('installBtn');
+            if (installBtn) {
+                installBtn.style.display = 'none';
+            }
+        });
 
         function startApp() {
             document.getElementById('splash').classList.add('hidden');
