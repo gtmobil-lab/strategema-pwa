@@ -798,7 +798,7 @@
         <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:40px">Plan de transformación personal</p>
         <div style="display: flex; gap: 12px; flex-direction: column; width: 100%; max-width: 300px;">
             <button class="splash-btn" onclick="startApp()">Comenzar</button>
-            <button class="splash-btn install-btn" id="installBtn" style="display: none; background: rgba(0, 137, 123, 0.9); font-size: 0.9rem; opacity: 0.9;" onclick="installApp()">📱 Instalar en el celular</button>
+            <button class="splash-btn install-btn" id="installBtn" style="background: rgba(0, 137, 123, 0.85); font-size: 0.9rem;" onclick="installApp()">📱 Instalar en el celular</button>
         </div>
     </div>
 
@@ -1055,42 +1055,41 @@
 
         // PWA Installation Handler
         let deferredPrompt;
+        let canInstall = false;
+
+        console.log('🚀 PWA Installation Handler inicializado');
 
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('✅ beforeinstallprompt evento capturado');
             e.preventDefault();
             deferredPrompt = e;
-            // Show the install button
-            const installBtn = document.getElementById('installBtn');
-            if (installBtn) {
-                installBtn.style.display = 'block';
-            }
+            canInstall = true;
         });
 
         function installApp() {
+            console.log('📱 installApp llamado, canInstall:', canInstall, 'deferredPrompt:', !!deferredPrompt);
+
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
+                    console.log('Usuario eligió:', choiceResult.outcome);
                     if (choiceResult.outcome === 'accepted') {
-                        console.log('App instalada');
+                        console.log('✅ App instalada exitosamente');
                     }
                     deferredPrompt = null;
-                    // Hide button after prompt
-                    const installBtn = document.getElementById('installBtn');
-                    if (installBtn) {
-                        installBtn.style.display = 'none';
-                    }
+                    canInstall = false;
                 });
+            } else {
+                console.log('⚠️ beforeinstallprompt no fue capturado. Mostrando alternativa...');
+                alert('Para instalar la app:\n\n1. Abre el menú (⋮)\n2. Busca "Instalar app" o "Install STRATEGEMA"\n3. Confirma la instalación\n\nSi no ves la opción, visita la app una o dos veces más.');
             }
         }
 
         // Check if app is already installed
         window.addEventListener('appinstalled', () => {
-            console.log('App instalada exitosamente');
+            console.log('✅ App instalada exitosamente (evento appinstalled)');
             deferredPrompt = null;
-            const installBtn = document.getElementById('installBtn');
-            if (installBtn) {
-                installBtn.style.display = 'none';
-            }
+            canInstall = false;
         });
 
         function startApp() {
@@ -1113,258 +1112,4 @@
                     btn.classList.add('active');
                     const tab = btn.getAttribute('data-tab');
                     switchTab(tab);
-                });
-            });
-
-            // Theme switcher
-            document.querySelectorAll('.theme-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const theme = btn.getAttribute('data-theme');
-                    setTheme(theme);
-                });
-            });
-        }
-
-        function setTheme(theme) {
-            // Remove all theme classes
-            document.body.classList.remove('theme-dark', 'theme-light', 'theme-accessible');
-
-            // Add selected theme (default is dark, no class needed)
-            if (theme !== 'dark') {
-                document.body.classList.add('theme-' + theme);
-            }
-
-            // Update button states
-            document.querySelectorAll('.theme-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.getAttribute('data-theme') === theme) {
-                    btn.classList.add('active');
-                }
-            });
-
-            // Save preference
-            localStorage.setItem('strategema_theme', theme);
-        }
-
-        function switchTab(tab) {
-            state.activeTab = tab;
-
-            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-
-            if (tab.startsWith('week')) {
-                document.getElementById('week-view').classList.remove('hidden');
-                state.activeWeek = parseInt(tab.replace('week-', ''));
-                state.activeDay = 0;
-                render();
-            } else if (tab === 'summary') {
-                document.getElementById('summary-view').classList.remove('hidden');
-                renderSummary();
-            } else if (tab === 'evaluation') {
-                document.getElementById('evaluation-view').classList.remove('hidden');
-                renderEvaluation();
-            }
-        }
-
-        function render() {
-            const week = state.plan.weeks[state.activeWeek];
-            document.getElementById('weekTitle').innerText = week.name;
-            document.getElementById('weekSubtitle').innerText = week.focus;
-            renderDaySelector();
-            renderDayDetail();
-        }
-
-        function renderDaySelector() {
-            const container = document.getElementById('daySelector');
-            const week = state.plan.weeks[state.activeWeek];
-            container.innerHTML = week.days.map((day, idx) => {
-                const score = Object.values(day.checks).filter(Boolean).length;
-                return `
-                    <div class="day-btn ${idx === state.activeDay ? 'active' : ''}" onclick="selectDay(${idx})">
-                        <span class="day-btn-label">${day.name.substring(0, 3)}</span>
-                        <span class="day-btn-score">${score}/4</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function selectDay(idx) {
-            state.activeDay = idx;
-            render();
-        }
-
-        function renderDayDetail() {
-            const week = state.plan.weeks[state.activeWeek];
-            const day = week.days[state.activeDay];
-
-            let html = `
-                <div class="card">
-                    <div class="day-header">
-                        <h2>${day.name}</h2>
-                        <span style="font-size:11px; color:var(--accent); font-weight:bold">${week.name}</span>
-                    </div>
-            `;
-
-            day.blocks.forEach((block, bidx) => {
-                html += `
-                    <div class="task-group">
-                        <button class="task-group-header" onclick="toggleBlock('${bidx}')">
-                            📍 ${block.title}: ${block.time}
-                            <span>${state.expandedBlocks[bidx] ? '▼' : '▾'}</span>
-                        </button>
-                        <div class="task-list ${state.expandedBlocks[bidx] ? 'open' : ''}">
-                            ${block.tasks.map((t, tidx) => `
-                                <div class="task-item">
-                                    <span class="bullet">▹</span>
-                                    <input type="text" value="${t}" onchange="updateTask(${state.activeWeek}, ${state.activeDay}, ${bidx}, ${tidx}, this.value)">
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += `
-                <div class="checklist">
-                    ${state.plan.pillars.map(pillar => {
-                        const isChecked = day.checks[pillar.id];
-                        return `
-                            <div class="check-btn ${isChecked ? 'checked' : ''}" onclick="toggleCheck(${state.activeWeek}, ${state.activeDay}, '${pillar.id}')">
-                                <div class="checkbox-ui">${isChecked ? '✓' : ''}</div>
-                                <span>${pillar.icon} ${pillar.name}</span>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-            `;
-
-            document.getElementById('dayDetail').innerHTML = html;
-        }
-
-        function toggleBlock(idx) {
-            state.expandedBlocks[idx] = !state.expandedBlocks[idx];
-            renderDayDetail();
-        }
-
-        function toggleCheck(w, d, pillarId) {
-            const day = state.plan.weeks[w].days[d];
-            day.checks[pillarId] = !day.checks[pillarId];
-            save();
-            renderDayDetail();
-            renderDaySelector();
-        }
-
-        function updateTask(w, d, b, t, value) {
-            state.plan.weeks[w].days[d].blocks[b].tasks[t] = value;
-            save();
-        }
-
-        function renderSummary() {
-            const week = state.plan.weeks[state.activeWeek];
-            let totalScore = 0, perfectDays = 0;
-
-            week.days.forEach(day => {
-                const score = Object.values(day.checks).filter(Boolean).length;
-                totalScore += score;
-                if (score === 4) perfectDays++;
-            });
-
-            document.getElementById('weekSuccessRate').innerText = Math.round((totalScore / (week.days.length * 4)) * 100) + '%';
-            document.getElementById('weekPerfectDays').innerText = perfectDays;
-
-            let pillarHtml = '';
-            state.plan.pillars.forEach(pillar => {
-                let pillarScore = 0;
-                week.days.forEach(day => {
-                    if (day.checks[pillar.id]) pillarScore++;
-                });
-                const perc = Math.round((pillarScore / week.days.length) * 100);
-                pillarHtml += `
-                    <div style="margin-bottom:20px">
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px">
-                            <span>${pillar.icon} ${pillar.name}</span>
-                            <span style="color:var(--accent); font-weight:700">${perc}%</span>
-                        </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:${perc}%"></div></div>
-                    </div>
-                `;
-            });
-
-            document.getElementById('pillarProgressList').innerHTML = pillarHtml;
-        }
-
-        function renderEvaluation() {
-            let totalScore = 0, perfectDays = 0;
-
-            state.plan.weeks.forEach(week => {
-                week.days.forEach(day => {
-                    const score = Object.values(day.checks).filter(Boolean).length;
-                    totalScore += score;
-                    if (score === 4) perfectDays++;
-                });
-            });
-
-            const totalPossible = state.plan.weeks.length * 7 * 4;
-            document.getElementById('planSuccessRate').innerText = Math.round((totalScore / totalPossible) * 100) + '%';
-            document.getElementById('planPerfectDays').innerText = perfectDays;
-
-            let pillarHtml = '';
-            state.plan.pillars.forEach(pillar => {
-                let pillarScore = 0;
-                state.plan.weeks.forEach(week => {
-                    week.days.forEach(day => {
-                        if (day.checks[pillar.id]) pillarScore++;
-                    });
-                });
-                const totalDays = state.plan.weeks.length * 7;
-                const perc = Math.round((pillarScore / totalDays) * 100);
-                pillarHtml += `
-                    <div style="margin-bottom:20px">
-                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px">
-                            <span>${pillar.icon} ${pillar.name}</span>
-                            <span style="color:var(--accent); font-weight:700">${perc}%</span>
-                        </div>
-                        <div class="progress-bar"><div class="progress-fill" style="width:${perc}%"></div></div>
-                    </div>
-                `;
-            });
-
-            document.getElementById('planPillarProgress').innerHTML = pillarHtml;
-        }
-
-        function save() {
-            localStorage.setItem('strategema_state_v2', JSON.stringify(state));
-        }
-
-        function exportData() {
-            const data = {
-                timestamp: new Date().toISOString(),
-                type: 'weekly-backup',
-                data: state
-            };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-            const link = document.createElement('a');
-            link.setAttribute("href", dataStr);
-            link.setAttribute("download", `strategema-backup-${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        }
-
-        function exportFinalData() {
-            exportData();
-        }
-
-        // Initialize on load
-        window.addEventListener('load', () => {
-            init();
-        });
-
-        // Service Worker registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-    </script>
-
-</body>
-</html>
+             
