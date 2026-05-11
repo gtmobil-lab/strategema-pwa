@@ -788,154 +788,6 @@
         body.theme-light .modal-content {
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
         }
-
-        /* === PLAN SELECTOR === */
-        .plan-selector-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: auto;
-            padding-right: 10px;
-        }
-
-        .plan-selector {
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-main);
-            font-size: 12px;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            transition: var(--transition);
-            max-width: 150px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .plan-selector:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--accent);
-        }
-
-        body.theme-light .plan-selector {
-            background: rgba(0, 137, 123, 0.04);
-            border-color: rgba(0, 137, 123, 0.15);
-            color: #1A2332;
-        }
-
-        body.theme-light .plan-selector:hover {
-            background: rgba(0, 137, 123, 0.1);
-            border-color: #00897B;
-        }
-
-        .plan-btn {
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-main);
-            font-size: 12px;
-            cursor: pointer;
-            transition: var(--transition);
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .plan-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--accent);
-        }
-
-        body.theme-light .plan-btn {
-            background: rgba(0, 137, 123, 0.04);
-            border-color: rgba(0, 137, 123, 0.15);
-            color: #1A2332;
-        }
-
-        body.theme-light .plan-btn:hover {
-            background: rgba(0, 137, 123, 0.1);
-            border-color: #00897B;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .plan-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 8px 0;
-            min-width: 200px;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 2000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        body.theme-light .plan-dropdown {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .plan-item {
-            padding: 10px 16px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            font-size: 13px;
-        }
-
-        .plan-item:hover {
-            background: var(--accent-soft);
-        }
-
-        .plan-item.active {
-            background: var(--accent-soft);
-            color: var(--accent);
-            font-weight: 600;
-        }
-
-        .plan-item-delete {
-            color: #ff4757;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: var(--transition);
-            font-size: 11px;
-        }
-
-        .plan-item-delete:hover {
-            background: rgba(255, 71, 87, 0.1);
-        }
-
-        .plan-dropdown-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 8px 0;
-        }
-
-        .plan-dropdown-action {
-            padding: 10px 16px;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 13px;
-            color: var(--accent);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .plan-dropdown-action:hover {
-            background: var(--accent-soft);
-        }
     </style>
 </head>
 <body>
@@ -959,23 +811,12 @@
         <button class="nav-btn" data-tab="summary">Resumen</button>
         <button class="nav-btn" data-tab="evaluation">Evaluación</button>
 
-        <div class="plan-selector-wrapper">
-            <div style="position: relative;">
-                <button class="plan-btn" id="planMenuBtn" onclick="togglePlanMenu()" title="Mis Planes">📋</button>
-                <div class="plan-dropdown hidden" id="planDropdown"></div>
-            </div>
-            <button class="plan-btn" onclick="document.getElementById('fileInput').click()" title="Importar Plan">⬆️</button>
-        </div>
-
         <div class="theme-switcher">
             <button class="theme-btn active" data-theme="dark" title="Modo Oscuro">🌙</button>
             <button class="theme-btn" data-theme="light" title="Modo Claro">☀️</button>
             <button class="theme-btn" data-theme="accessible" title="Accesibilidad">♿</button>
         </div>
     </nav>
-
-    <!-- FILE INPUT (HIDDEN) -->
-    <input type="file" id="fileInput" accept=".json,.html" onchange="handleFileImport(event)">
 
     <!-- MAIN CONTAINER -->
     <div class="container" id="mainContainer" style="opacity:0; pointer-events:none;">
@@ -1055,51 +896,22 @@
             activeDay: 0,
             activeTab: 'week-0',
             expandedBlocks: {},
-            reflections: {},
-            activePlanId: null,
-            plans: [] // Array of { id, name, data, createdAt }
+            reflections: {}
         };
 
         // Load initial plan structure (from localStorage or default)
         function init() {
-            // Load all saved plans
-            const savedPlans = localStorage.getItem('strategema_plans');
-            if (savedPlans) {
-                state.plans = JSON.parse(savedPlans);
-            }
-
-            // Load active plan ID
-            state.activePlanId = localStorage.getItem('strategema_activePlanId');
-
-            // Try to load active plan
-            if (state.activePlanId && state.plans.length > 0) {
-                const activePlan = state.plans.find(p => p.id === state.activePlanId);
-                if (activePlan) {
-                    state.plan = activePlan.data;
-                } else {
-                    // Active plan not found, use first available
-                    state.activePlanId = state.plans[0].id;
-                    state.plan = state.plans[0].data;
-                    localStorage.setItem('strategema_activePlanId', state.activePlanId);
-                }
-            } else {
-                // No plans exist, create default
-                initDefaultPlan();
-            }
-
-            // Load state data for current plan
             const saved = localStorage.getItem('strategema_state_v2');
             if (saved) {
-                const savedState = JSON.parse(saved);
-                state.activeWeek = savedState.activeWeek || 0;
-                state.activeDay = savedState.activeDay || 0;
-                state.expandedBlocks = savedState.expandedBlocks || {};
-                state.reflections = savedState.reflections || {};
+                state = JSON.parse(saved);
+            } else {
+                // Initialize with default structure if first time
+                initDefaultPlan();
             }
         }
 
         function initDefaultPlan() {
-            const defaultPlan = {
+            state.plan = {
                 meta: {
                     title: "Mes I — Fundación",
                     subtitle: "Plan de transformación · 28 días",
@@ -1239,21 +1051,6 @@
                     }
                 ]
             };
-
-            // Create plan entry and add to plans array
-            const planId = 'plan_' + Date.now();
-            state.plan = defaultPlan;
-            state.activePlanId = planId;
-            state.plans = [{
-                id: planId,
-                name: defaultPlan.meta.title,
-                data: defaultPlan,
-                createdAt: new Date().toISOString()
-            }];
-
-            // Save to localStorage
-            localStorage.setItem('strategema_plans', JSON.stringify(state.plans));
-            localStorage.setItem('strategema_activePlanId', planId);
         }
 
         // PWA Installation Handler
@@ -1412,4 +1209,162 @@
                     <div class="task-group">
                         <button class="task-group-header" onclick="toggleBlock('${bidx}')">
                             📍 ${block.title}: ${block.time}
-                            <span>${state.expandedBlocks[b
+                            <span>${state.expandedBlocks[bidx] ? '▼' : '▾'}</span>
+                        </button>
+                        <div class="task-list ${state.expandedBlocks[bidx] ? 'open' : ''}">
+                            ${block.tasks.map((t, tidx) => `
+                                <div class="task-item">
+                                    <span class="bullet">▹</span>
+                                    <input type="text" value="${t}" onchange="updateTask(${state.activeWeek}, ${state.activeDay}, ${bidx}, ${tidx}, this.value)">
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div class="checklist">
+                    ${state.plan.pillars.map(pillar => {
+                        const isChecked = day.checks[pillar.id];
+                        return `
+                            <div class="check-btn ${isChecked ? 'checked' : ''}" onclick="toggleCheck(${state.activeWeek}, ${state.activeDay}, '${pillar.id}')">
+                                <div class="checkbox-ui">${isChecked ? '✓' : ''}</div>
+                                <span>${pillar.icon} ${pillar.name}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            `;
+
+            document.getElementById('dayDetail').innerHTML = html;
+        }
+
+        function toggleBlock(idx) {
+            state.expandedBlocks[idx] = !state.expandedBlocks[idx];
+            renderDayDetail();
+        }
+
+        function toggleCheck(w, d, pillarId) {
+            const day = state.plan.weeks[w].days[d];
+            day.checks[pillarId] = !day.checks[pillarId];
+            save();
+            renderDayDetail();
+            renderDaySelector();
+        }
+
+        function updateTask(w, d, b, t, value) {
+            state.plan.weeks[w].days[d].blocks[b].tasks[t] = value;
+            save();
+        }
+
+        function renderSummary() {
+            const week = state.plan.weeks[state.activeWeek];
+            let totalScore = 0, perfectDays = 0;
+
+            week.days.forEach(day => {
+                const score = Object.values(day.checks).filter(Boolean).length;
+                totalScore += score;
+                if (score === 4) perfectDays++;
+            });
+
+            document.getElementById('weekSuccessRate').innerText = Math.round((totalScore / (week.days.length * 4)) * 100) + '%';
+            document.getElementById('weekPerfectDays').innerText = perfectDays;
+
+            let pillarHtml = '';
+            state.plan.pillars.forEach(pillar => {
+                let pillarScore = 0;
+                week.days.forEach(day => {
+                    if (day.checks[pillar.id]) pillarScore++;
+                });
+                const perc = Math.round((pillarScore / week.days.length) * 100);
+                pillarHtml += `
+                    <div style="margin-bottom:20px">
+                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px">
+                            <span>${pillar.icon} ${pillar.name}</span>
+                            <span style="color:var(--accent); font-weight:700">${perc}%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${perc}%"></div></div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('pillarProgressList').innerHTML = pillarHtml;
+        }
+
+        function renderEvaluation() {
+            let totalScore = 0, perfectDays = 0;
+
+            state.plan.weeks.forEach(week => {
+                week.days.forEach(day => {
+                    const score = Object.values(day.checks).filter(Boolean).length;
+                    totalScore += score;
+                    if (score === 4) perfectDays++;
+                });
+            });
+
+            const totalPossible = state.plan.weeks.length * 7 * 4;
+            document.getElementById('planSuccessRate').innerText = Math.round((totalScore / totalPossible) * 100) + '%';
+            document.getElementById('planPerfectDays').innerText = perfectDays;
+
+            let pillarHtml = '';
+            state.plan.pillars.forEach(pillar => {
+                let pillarScore = 0;
+                state.plan.weeks.forEach(week => {
+                    week.days.forEach(day => {
+                        if (day.checks[pillar.id]) pillarScore++;
+                    });
+                });
+                const totalDays = state.plan.weeks.length * 7;
+                const perc = Math.round((pillarScore / totalDays) * 100);
+                pillarHtml += `
+                    <div style="margin-bottom:20px">
+                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px">
+                            <span>${pillar.icon} ${pillar.name}</span>
+                            <span style="color:var(--accent); font-weight:700">${perc}%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${perc}%"></div></div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('planPillarProgress').innerHTML = pillarHtml;
+        }
+
+        function save() {
+            localStorage.setItem('strategema_state_v2', JSON.stringify(state));
+        }
+
+        function exportData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                type: 'weekly-backup',
+                data: state
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const link = document.createElement('a');
+            link.setAttribute("href", dataStr);
+            link.setAttribute("download", `strategema-backup-${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function exportFinalData() {
+            exportData();
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            init();
+        });
+
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+
+</body>
+</html>
