@@ -788,6 +788,20 @@
         body.theme-light .modal-content {
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
         }
+
+        /* Plan Management */
+        .plan-controls { display: flex; gap: 8px; margin-left: auto; }
+        .plan-btn { padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); cursor: pointer; font-size: 12px; transition: var(--transition); }
+        .plan-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+        body.theme-light .plan-btn { background: rgba(0,137,123,0.04); border-color: rgba(0,137,123,0.15); }
+        body.theme-light .plan-btn:hover { background: rgba(0,137,123,0.1); border-color: #00897B; }
+        .plan-menu { position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 0; min-width: 180px; max-height: 300px; overflow-y: auto; z-index: 2000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .plan-menu.active { display: block; }
+        .plan-item { padding: 10px 16px; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .plan-item:hover { background: var(--accent-soft); }
+        .plan-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+        .plan-del { color: #ff4757; font-size: 10px; cursor: pointer; }
+        #fileInput { display: none; }
     </style>
 </head>
 <body>
@@ -810,6 +824,15 @@
         <button class="nav-btn" data-tab="week-3">Semana IV</button>
         <button class="nav-btn" data-tab="summary">Resumen</button>
         <button class="nav-btn" data-tab="evaluation">Evaluación</button>
+
+        <input type="file" id="fileInput" accept=".json,.html">
+        <div class="plan-controls">
+            <div style="position:relative">
+                <button class="plan-btn" id="planBtn" title="Mis Planes">📋</button>
+                <div class="plan-menu" id="planMenu"></div>
+            </div>
+            <button class="plan-btn" onclick="document.getElementById('fileInput').click()" title="Importar">⬆️</button>
+        </div>
 
         <div class="theme-switcher">
             <button class="theme-btn active" data-theme="dark" title="Modo Oscuro">🌙</button>
@@ -896,7 +919,9 @@
             activeDay: 0,
             activeTab: 'week-0',
             expandedBlocks: {},
-            reflections: {}
+            reflections: {},
+            plans: [],
+            activePlanId: null
         };
 
         // Load initial plan structure (from localStorage or default)
@@ -1334,6 +1359,13 @@
 
         function save() {
             localStorage.setItem('strategema_state_v2', JSON.stringify(state));
+            if (state.plans && state.activePlanId) {
+                const idx = state.plans.findIndex(p => p.id === state.activePlanId);
+                if (idx >= 0) {
+                    state.plans[idx].data = state.plan;
+                    localStorage.setItem('strategema_plans', JSON.stringify(state.plans));
+                }
+            }
         }
 
         function exportData() {
@@ -1355,9 +1387,157 @@
             exportData();
         }
 
+
+        // Load plans from localStorage
+        function loadPlans() {
+            const saved = localStorage.getItem('strategema_plans');
+            if (saved) {
+                state.plans = JSON.parse(saved);
+                state.activePlanId = localStorage.getItem('strategema_activePlanId');
+                if (state.activePlanId && state.plans.length > 0) {
+                    const active = state.plans.find(p => p.id === state.activePlanId);
+                    if (active) state.plan = JSON.parse(JSON.stringify(active.data));
+                }
+            }
+        }
+
+        // Setup plan UI event listeners
+        function setupPlanUI() {
+            const btn = document.getElementById('planBtn');
+            const menu = document.getElementById('planMenu');
+            if (!btn) return;
+
+            btn.addEventListener('click', () => {
+                menu.classList.toggle('active');
+                if (menu.classList.contains('active')) renderPlanMenu();
+            });
+
+            document.getElementById('fileInput').addEventListener('change', importPlan);
+
+            document.addEventListener('click', (e) => {
+                if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                    menu.classList.remove('active');
+                }
+            });
+        }
+
+        // Render the plan dropdown menu
+        function renderPlanMenu() {
+            const menu = document.getElementById('planMenu');
+            if (!state.plans || !state.plans.length) {
+                menu.innerHTML = '<div style="padding:10px 16px;font-size:11px;color:var(--text-dim)">No hay planes</div>';
+                return;
+            }
+            let html = state.plans.map(p => {
+                const active = p.id === state.activePlanId ? 'active' : '';
+                return `<div class="plan-item ${active}" onclick="usePlan('${p.id}')"><span>${p.name}</span><span class="plan-del" onclick="event.stopPropagation();delPlan('${p.id}')">✕</span></div>`;
+            }).join('');
+            menu.innerHTML = html;
+        }
+
+        // Switch to a different plan
+        function usePlan(id) {
+            if (state.activePlanId === id) {
+                document.getElementById('planMenu').classList.remove('active');
+                return;
+            }
+            state.activePlanId = id;
+            const p = state.plans.find(x => x.id === id);
+            if (p) {
+                state.plan = JSON.parse(JSON.stringify(p.data));
+                state.activeWeek = 0;
+                state.activeDay = 0;
+                localStorage.setItem('strategema_activePlanId', id);
+                localStorage.setItem('strategema_plans', JSON.stringify(state.plans));
+                render();
+                document.getElementById('planMenu').classList.remove('active');
+            }
+        }
+
+        // Delete a plan
+        function delPlan(id) {
+            if (state.plans.length <= 1) {
+                alert('Debes mantener al menos un plan');
+                return;
+            }
+            if (confirm('¿Eliminar este plan?')) {
+                state.plans = state.plans.filter(p => p.id !== id);
+                if (state.activePlanId === id) usePlan(state.plans[0].id);
+                else localStorage.setItem('strategema_plans', JSON.stringify(state.plans));
+                renderPlanMenu();
+            }
+        }
+
+        // Import a plan from file (JSON or HTML)
+        function importPlan(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const r = new FileReader();
+            r.onload = evt => {
+                try {
+                    let plan = null;
+                    const content = evt.target.result;
+
+                    if (file.name.endsWith('.json')) {
+                        const json = JSON.parse(content);
+                        plan = json.plan || json;
+                    } else if (file.name.endsWith('.html')) {
+                        const doc = new DOMParser().parseFromString(content, 'text/html');
+                        plan = {
+                            meta: {
+                                title: doc.querySelector('h1')?.textContent || 'Plan',
+                                subtitle: '',
+                                quote: '',
+                                quoteAuthor: ''
+                            },
+                            pillars: [
+                                { id: 'p1', name: 'MIT', icon: '⚡' },
+                                { id: 'p2', name: 'Lectura', icon: '📖' },
+                                { id: 'p3', name: 'Físico', icon: '💪' },
+                                { id: 'p4', name: 'Proyección', icon: '🎯' }
+                            ],
+                            weeks: Array(4).fill(0).map((_, w) => ({
+                                id: `w${w+1}`,
+                                name: `Semana ${w+1}`,
+                                focus: '',
+                                days: Array(7).fill(0).map((_, d) => ({
+                                    id: `w${w+1}d${d}`,
+                                    name: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][d],
+                                    focus: '',
+                                    blocks: [],
+                                    checks: { p1: false, p2: false, p3: false, p4: false }
+                                }))
+                            }))
+                        };
+                    }
+
+                    if (plan && plan.meta && plan.pillars && plan.weeks) {
+                        const id = 'plan_' + Date.now();
+                        state.plans.push({
+                            id,
+                            name: plan.meta.title || file.name,
+                            data: plan,
+                            createdAt: new Date().toISOString()
+                        });
+                        localStorage.setItem('strategema_plans', JSON.stringify(state.plans));
+                        usePlan(id);
+                        alert('✓ Plan importado');
+                    } else {
+                        alert('✕ Formato inválido');
+                    }
+                } catch (err) {
+                    alert('✕ Error: ' + err.message);
+                }
+            };
+            r.readAsText(file);
+            e.target.value = '';
+        }
+
         // Initialize on load
         window.addEventListener('load', () => {
             init();
+            loadPlans();
+            setupPlanUI();
         });
 
         // Service Worker registration
